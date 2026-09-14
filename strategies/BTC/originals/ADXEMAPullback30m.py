@@ -113,6 +113,7 @@ class ADXEMAPullback30m(IStrategy):
             dataframe["ema50"] > dataframe["ema200"]
         ).astype(int)
 
+        # Distancia útil para análisis posterior.
         dataframe["distance_ema20_pct"] = (
             (dataframe["close"] - dataframe["ema20"])
             / dataframe["ema20"]
@@ -125,6 +126,8 @@ class ADXEMAPullback30m(IStrategy):
             * 100.0
         )
 
+        # Retroceso:
+        # la vela toca o penetra EMA20 pero no rompe claramente EMA50.
         dataframe["pullback_zone"] = (
             (dataframe["low"] <= dataframe["ema20"])
             & (dataframe["low"] >= dataframe["ema50"] * 0.995)
@@ -133,6 +136,9 @@ class ADXEMAPullback30m(IStrategy):
         return dataframe
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
+        """
+        Entrada al recuperar EMA20 después de un retroceso.
+        """
         previous_pullback = (
             (dataframe["low"].shift(1) <= dataframe["ema20"].shift(1))
             & (dataframe["low"].shift(1) >= dataframe["ema50"].shift(1) * 0.995)
@@ -160,6 +166,9 @@ class ADXEMAPullback30m(IStrategy):
         return dataframe
 
     def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
+        """
+        Salida cuando se pierde la estructura de tendencia.
+        """
         exit_condition = (
             (
                 (dataframe["close"] < dataframe["ema50"])
