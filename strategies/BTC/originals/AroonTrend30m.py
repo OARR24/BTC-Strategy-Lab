@@ -66,17 +66,20 @@ class AroonTrend30m(IStrategy):
             dataframe["aroon_down"]
         )
 
+        # Momentum secundario
         dataframe["rsi"] = ta.RSI(
             dataframe,
             timeperiod=14
         )
 
+        # Volumen
         dataframe["volume_mean_20"] = (
             dataframe["volume"]
             .rolling(20)
             .mean()
         )
 
+        # ATR para conocer régimen de movimiento
         dataframe["atr14"] = ta.ATR(
             dataframe,
             timeperiod=14
@@ -97,13 +100,26 @@ class AroonTrend30m(IStrategy):
     ) -> DataFrame:
 
         aroon_trend_entry = (
+            # Máximo reciente muy cercano
             (dataframe["aroon_up"] > 75) &
+
+            # Mínimo reciente relativamente lejano
             (dataframe["aroon_down"] < 35) &
+
+            # Oscilador confirma dominancia alcista
             (dataframe["aroon_osc"] > 50) &
+
+            # Cruce hacia régimen fuerte
             (dataframe["aroon_osc"].shift(1) <= 50) &
+
+            # Momentum razonable
             (dataframe["rsi"] > 50) &
             (dataframe["rsi"] < 75) &
-            (dataframe["volume"] > dataframe["volume_mean_20"] * 0.80) &
+
+            # Volumen mínimo
+            (dataframe["volume"] >
+             dataframe["volume_mean_20"] * 0.80) &
+
             (dataframe["volume"] > 0)
         )
 
@@ -123,6 +139,7 @@ class AroonTrend30m(IStrategy):
         metadata: dict
     ) -> DataFrame:
 
+        # Tendencia pierde dominancia
         trend_weakening = (
             (dataframe["aroon_osc"] < 20) &
             (dataframe["aroon_osc"].shift(1) >= 20)
@@ -136,6 +153,7 @@ class AroonTrend30m(IStrategy):
             "AROON_TREND_WEAKENING"
         )
 
+        # Aroon Down empieza a dominar
         bearish_dominance = (
             (dataframe["aroon_down"] > 70) &
             (dataframe["aroon_up"] < 40)
